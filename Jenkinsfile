@@ -1,10 +1,5 @@
-
-
 pipeline {
     agent none
-    options {
-        skipStagesAfterUnstable()
-    }
     stages {
         stage('Build') {
             agent {
@@ -16,7 +11,15 @@ pipeline {
                 sh 'python -m py_compile sources/add2vals.py sources/calc.py'
                 stash(name: 'compiled-results', includes: 'sources/*.py*')
             }
+
         }
+
+    stage('Wait for 30 seconds') {
+        steps {
+            sleep time: 30, unit: 'SECONDS'
+        }
+    }
+
         stage('Test') {
             agent {
                 docker {
@@ -32,25 +35,31 @@ pipeline {
                 }
             }
         }
-        stage('Deliver') { 
+
+    stage('Approve Delivery') {
+        steps {
+            input message: 'Proceed with delivery?', ok: 'Deliver'
+        }
+    }
+
+        stage('Deliver') {
             agent any
-            environment { 
+            environment {
                 VOLUME = '$(pwd)/sources:/src'
                 IMAGE = 'cdrx/pyinstaller-linux:python2'
             }
             steps {
-                dir(path: env.BUILD_ID) { 
-                    unstash(name: 'compiled-results') 
-                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'" 
+                dir(path: env.BUILD_ID) {
+                    unstash(name: 'compiled-results')
+                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'"
                 }
             }
             post {
                 success {
-                    archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals" 
+                    archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals"
                     sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
                 }
             }
         }
     }
 }
-
