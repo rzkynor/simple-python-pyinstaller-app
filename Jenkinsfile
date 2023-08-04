@@ -42,11 +42,6 @@ pipeline {
             }
         }
 
-        stage('Wait for 1 minute') {
-        steps {
-            sleep time: 1, unit: 'MINUTES'
-        }
-        }
 
          stage('Deploy') {
             agent any
@@ -59,6 +54,9 @@ pipeline {
                     unstash(name: 'compiled-results')
                     sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'"
                 }
+                sleep time: 1, unit: 'MINUTES'
+                sh "kill -9 \$(docker ps -q -f ancestor=${IMAGE})"
+            }
             }
             post {
                 success {
