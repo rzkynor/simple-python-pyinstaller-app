@@ -1,5 +1,10 @@
 pipeline {
     agent none
+    options {
+        // Enable Prometheus metrics collection
+        prometheusMetricsPath '/prom'
+        prometheusMetricsPeriod '10'
+    }
     stages {
         stage('Build') {
             agent {
