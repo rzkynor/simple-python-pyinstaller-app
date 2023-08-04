@@ -67,4 +67,10 @@ pipeline {
             }
         }
     }
+    // Menambahkan tahap baru untuk menjeda eksekusi selama 1 menit
+    stage('Wait for 1 minute') {
+        steps {
+            sleep time: 1, unit: 'MINUTES'
+        }
+    }
 }
