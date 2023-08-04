@@ -42,6 +42,12 @@ pipeline {
             }
         }
 
+        stage('Wait for 1 minute') {
+        steps {
+            sleep time: 1, unit: 'MINUTES'
+        }
+        }
+
          stage('Deploy') {
             agent any
             environment {
@@ -60,12 +66,6 @@ pipeline {
                     sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
                 }
             }
-        }
-    }
-    // Menambahkan tahap baru untuk menjeda eksekusi selama 1 menit
-    stage('Wait for 1 minute') {
-        steps {
-            sleep time: 1, unit: 'MINUTES'
         }
     }
 }
