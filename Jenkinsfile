@@ -14,6 +14,12 @@ pipeline {
 
         }
 
+    stage('Wait for 30 seconds') {
+        steps {
+            sleep time: 30, unit: 'SECONDS'
+        }
+    }
+
         stage('Test') {
             agent {
                 docker {
@@ -44,21 +50,24 @@ pipeline {
     }
     steps {
         script {
-            // Menjalankan docker run di background dengan &
-            def containerId = sh(returnStdout: true, script: "docker run -d --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'")
+            // Menjalankan aplikasi dengan Docker Compose
+            sh "docker-compose -f docker-compose.yml up -d"
             // Menunggu 1 menit (60 detik)
             sleep 60
-            // Menghentikan proses Docker setelah 1 menit
-            sh "docker stop ${containerId}"
+            // Menghentikan kontainer dengan Docker Compose
+            sh "docker-compose -f docker-compose.yml down"
         }
     }
     post {
         success {
+            // Arsipkan hasil build
             archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals"
+            // Bersihkan build artifacts
             sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
         }
     }
 }
+
 
     }
 }
