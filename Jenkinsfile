@@ -1,5 +1,6 @@
 pipeline {
     agent none
+
     stages {
         stage('Build') {
             agent {
@@ -42,34 +43,24 @@ pipeline {
             }
         }
 
-    stage('Deploy') {
-    agent any
-    environment {
-        VOLUME = '$(pwd)/sources:/src'
-        IMAGE = 'cdrx/pyinstaller-linux:python2'
-        DOCKER_COMPOSE_PATH = '/absolute/path/to/docker-compose' // Replace this with the actual path
-    }
-    steps {
-        script {
-            // Menjalankan aplikasi dengan Docker Compose
-            sh "${DOCKER_COMPOSE_PATH} -f docker-compose.yml up -d"
-            // Menunggu 1 menit (60 detik)
-            sleep 60
-            // Menghentikan kontainer dengan Docker Compose
-            sh "${DOCKER_COMPOSE_PATH} -f docker-compose.yml down"
+         stage('Deploy') {
+            agent any
+            environment {
+                VOLUME = '$(pwd)/sources:/src'
+                IMAGE = 'cdrx/pyinstaller-linux:python2'
+            }
+            steps {
+                dir(path: env.BUILD_ID) {
+                    unstash(name: 'compiled-results')
+                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'"
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals"
+                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
+                }
+            }
         }
-    }
-    post {
-        success {
-            // Arsipkan hasil build
-            archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals"
-            // Bersihkan build artifacts
-            sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
-        }
-    }
-}
-
-
-
     }
 }
