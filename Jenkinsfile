@@ -42,23 +42,21 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+    stage('Deploy') {
     agent any
     environment {
         VOLUME = '$(pwd)/sources:/src'
         IMAGE = 'cdrx/pyinstaller-linux:python2'
     }
     steps {
-        dir(path: env.BUILD_ID) {
-            unstash(name: 'compiled-results')
+        script {
             // Menjalankan docker run di background dengan &
-            sh "docker run -d --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py' &"
-            // Menyimpan PID proses Docker ke dalam variabel lingkungan
-            sh 'export DOCKER_PID=$(docker ps -q -f ancestor=${IMAGE})'
+            def containerId = sh(returnStdout: true, script: "docker run -d --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'")
+            // Menunggu 1 menit (60 detik)
+            sleep 60
+            // Menghentikan proses Docker setelah 1 menit
+            sh "docker stop ${containerId}"
         }
-        sleep time: 1, unit: 'MINUTES'
-        // Gunakan PID yang sudah disimpan untuk menghentikan proses Docker setelah 1 menit
-        sh 'kill -9 $DOCKER_PID'
     }
     post {
         success {
