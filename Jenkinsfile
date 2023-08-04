@@ -47,15 +47,16 @@ pipeline {
     environment {
         VOLUME = '$(pwd)/sources:/src'
         IMAGE = 'cdrx/pyinstaller-linux:python2'
+        DOCKER_COMPOSE_PATH = '/absolute/path/to/docker-compose' // Replace this with the actual path
     }
     steps {
         script {
             // Menjalankan aplikasi dengan Docker Compose
-            sh "docker-compose -f docker-compose.yml up -d"
+            sh "${DOCKER_COMPOSE_PATH} -f docker-compose.yml up -d"
             // Menunggu 1 menit (60 detik)
             sleep 60
             // Menghentikan kontainer dengan Docker Compose
-            sh "docker-compose -f docker-compose.yml down"
+            sh "${DOCKER_COMPOSE_PATH} -f docker-compose.yml down"
         }
     }
     post {
@@ -67,6 +68,7 @@ pipeline {
         }
     }
 }
+
 
 
     }
