@@ -44,25 +44,26 @@ pipeline {
 
 
           stage('Deploy') {
-            agent any
-            environment {
-                VOLUME = '$(pwd)/sources:/src'
-                IMAGE = 'cdrx/pyinstaller-linux:python2'
-            }
-            steps {
-                dir(path: env.BUILD_ID) {
-                    unstash(name: 'compiled-results')
-                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py' &"
-                }
-                sleep time: 1, unit: 'MINUTES'
-                sh "kill -9 \$(docker ps -q -f ancestor=${IMAGE})"
-            }
-            post {
-                success {
-                    archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals"
-                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
-                }
-            }
+    agent any
+    environment {
+        VOLUME = '$(pwd)/sources:/src'
+        IMAGE = 'cdrx/pyinstaller-linux:python2'
+    }
+    steps {
+        dir(path: env.BUILD_ID) {
+            unstash(name: 'compiled-results')
+            sh "docker run -d --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'"
+            // Simpan PID proses Docker yang berjalan
+            sh 'export DOCKER_PID=$(docker ps -q -f ancestor=${IMAGE})'
+        }
+        sleep time: 1, unit: 'MINUTES'
+        // Gunakan PID yang sudah disimpan untuk menghentikan proses Docker setelah 1 menit
+        sh 'kill -9 $DOCKER_PID'
+    }
+    post {
+        success {
+            archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals"
+            sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
         }
     }
 }
