@@ -36,13 +36,13 @@ pipeline {
             }
         }
 
-    stage('Approve Delivery') {
-        steps {
-            input message: 'Proceed with delivery?', ok: 'Deliver'
+        stage('Manual Approval') {
+            steps {
+                input message: 'Proceed with delivery?', ok: 'Deploy'
+            }
         }
-    }
 
-        stage('Deliver') {
+         stage('Deploy') {
             agent any
             environment {
                 VOLUME = '$(pwd)/sources:/src'
