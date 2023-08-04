@@ -14,12 +14,6 @@ pipeline {
 
         }
 
-    stage('Wait for 30 seconds') {
-        steps {
-            sleep time: 30, unit: 'SECONDS'
-        }
-    }
-
         stage('Test') {
             agent {
                 docker {
