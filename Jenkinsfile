@@ -15,7 +15,6 @@ pipeline {
 
         }
 
-
         stage('Test') {
             agent {
                 docker {
@@ -32,7 +31,13 @@ pipeline {
             }
         }
 
-    stage('Deploy') {
+        stage('Manual Approval') {
+            steps {
+                input message: 'Proceed with delivery?', ok: 'Deploy'
+            }
+        }
+
+        stage('Deploy') {
             agent any
             environment {
                 VOLUME = '$(pwd)/sources:/src'
