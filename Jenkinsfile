@@ -15,11 +15,6 @@ pipeline {
 
         }
 
-    stage('Wait for 30 seconds') {
-        steps {
-            sleep time: 30, unit: 'SECONDS'
-        }
-    }
 
         stage('Test') {
             agent {
@@ -37,13 +32,7 @@ pipeline {
             }
         }
 
-        stage('Manual Approval') {
-            steps {
-                input message: 'Proceed with delivery?', ok: 'Deploy'
-            }
-        }
-
-         stage('Deploy') {
+    stage('Deploy') {
             agent any
             environment {
                 VOLUME = '$(pwd)/sources:/src'
@@ -52,7 +41,13 @@ pipeline {
             steps {
                 dir(path: env.BUILD_ID) {
                     unstash(name: 'compiled-results')
-                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'"
+                    script {
+                        // Menjeda eksekusi selama 1 menit (60 detik)
+                        def timeoutDuration = 60
+                        timeout(time: timeoutDuration, unit: 'SECONDS') {
+                            sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'"
+                        }
+                    }
                 }
             }
             post {
